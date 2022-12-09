@@ -102,7 +102,6 @@ async function run() {
         app.put('/singlecontact/:id', verifyjwt, async (req, res) => {
             const id = req.params.id;
             const data = req.body;
-            console.log(data);
             const query = {
                 _id: ObjectId(id)
             }
