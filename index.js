@@ -43,14 +43,15 @@ const verifyjwt = (req, res, next) => {
 async function run() {
     try {
         const contactCollections = client.db('AddressBook').collection('contacts');
+        const usersCollections = client.db('AddressBook').collection('users');
 
         // create Secret Token...........................................
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
             const query = {
-                useremail: email
+                email
             }
-            const user = await contactCollections.findOne(query);
+            const user = await usersCollections.findOne(query);
             if (user) {
                 const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '6d' })
                 return res.send({ accessToken: token })
@@ -61,16 +62,30 @@ async function run() {
         // get all contact from database...........................
         app.get('/allcontacts', verifyjwt, async (req, res) => {
             const email = req.query.email;
-            // const decodedEmail = req.decoded.email;
-            // if (email !== decodedEmail) {
-            //     return res.status(403).send({ message: 'Forbidden access' })
-            // }
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'Forbidden access' })
+            }
             const query = {
                 useremail: email
             };
             const result = await contactCollections.find(query).toArray();
             res.send(result);
         })
+
+        // Save Users to database...............................
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const query = { email: user.email };
+            const savedUser = await usersCollections.findOne(query);
+            if (savedUser) {
+                return res.send({ message: 'User already saved' });
+            }
+            const result = await usersCollections.insertOne(user);
+            res.send(result)
+        })
+
+
 
         // get specific contact ..................................
         app.get('/contact/:id', verifyjwt, async (req, res) => {
